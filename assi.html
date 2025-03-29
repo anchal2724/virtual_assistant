@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Gift Assistant</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .assistant-container {
+            width: 700px;
+            height: 500px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .assistant-header {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .voice-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .voice-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .assistant-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .avatar-container {
+            width: 250px;
+            background: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            position: relative;
+        }
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #a777e3, #6e8efb);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar::before {
+            content: "";
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            top: 40px;
+            left: 40px;
+            box-shadow: 70px 0 0 white;
+        }
+
+        .avatar::after {
+            content: "";
+            position: absolute;
+            width: 25px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            top: 65px;
+            left: 50px;
+            box-shadow: 70px 0 0 #333;
+            animation: blink 4s infinite;
+        }
+
+        @keyframes blink {
+            0%, 45%, 55%, 100% { height: 12px; }
+            50% { height: 4px; }
+        }
+
+        .avatar-speech {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            width: 180px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .avatar-speech.active {
+            opacity: 1;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            margin-bottom: 12px;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            line-height: 1.4;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background: #f1f1f1;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-container {
+            display: flex;
+            border-top: 1px solid #eee;
+            padding-top: 12px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 0 20px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .typing-indicator {
+            display: inline-block;
+            padding: 8px;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #999;
+            margin-right: 3px;
+            animation: typingAnimation 1.4s infinite both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        .gift-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .gift-card {
+            width: calc(50% - 6px);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .gift-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .gift-image {
+            height: 80px;
+            background: #f0f4f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+
+        .gift-details {
+            padding: 10px;
+        }
+
+        .gift-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .gift-price {
+            color: #6e8efb;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .question-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .option-btn {
+            background: #e3f2fd;
+            border: none;
+            border-radius: 15px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 12px;
+        }
+
+        .option-btn:hover {
+            background: #bbdefb;
+        }
+
+        .listening-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff4d4d;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .pulse-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .pulse-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .pulse-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+        
+        .common-gift {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            border-left: 3px solid #6e8efb;
+            font-size: 13px;
+        }
+        
+        .common-gift-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #6e8efb;
+            font-size: 14px;
+        }
+        
+        .gift-reason {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="assistant-container">
+        <div class="assistant-header">
+            <span>Virtual Gift Assistant</span>
+            <div class="voice-controls">
+                <button class="voice-btn" id="speak-btn" title="Speak">🔊</button>
+                <button class="voice-btn" id="listen-btn" title="Listen">🎤</button>
+            </div>
+        </div>
+        <div class="assistant-body">
+            <div class="avatar-container">
+                <div class="avatar-speech" id="avatar-speech">Hello! I'm your gift assistant.</div>
+                <div class="avatar">
+                    😊
+                </div>
+                <h3 style="margin: 10px 0 5px; font-size: 16px;">Gift Genie</h3>
+                <p style="margin: 0; font-size: 13px; color: #666;">I'll help you find the perfect gift!</p>
+                <div class="listening-indicator" id="listening-indicator" style="display: none;">
+                    <div class="pulse-dot"></div>
+                    <div class="pulse-dot"></div>
+                    <div class="pulse-dot"></div>
+                </div>
+            </div>
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Messages will appear here -->
+                </div>
+                <div class="input-container">
+                    <input type="text" id="user-input" placeholder="Type or speak your message...">
+                    <button id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const avatarSpeech = document.getElementById('avatar-speech');
+        const speakBtn = document.getElementById('speak-btn');
+        const listenBtn = document.getElementById('listen-btn');
+        const listeningIndicator = document.getElementById('listening-indicator');
+
+        // Speech synthesis and recognition
+        const synth = window.speechSynthesis;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        // Conversation state
+        let conversationState = {
+            step: 'welcome',
+            budget: null,
+            recipient: null,
+            occasion: null,
+            interests: []
+        };
+
+        // Enhanced gift database with more variety and occasions
+        const giftDatabase = {
+            low: {
+                family: {
+                    birthday: [
+                        { name: "Personalized Photo Frame", price: "₹500", interests: ["sentimental", "home decor"], emoji: "🖼", reason: "A heartfelt way to preserve memories" },
+                        { name: "Custom Recipe Book", price: "₹750", interests: ["cooking", "family"], emoji: "📖", reason: "Perfect for family chefs" }
+                    ],
+                    anniversary: [
+                        { name: "Couple's Journal", price: "₹650", interests: ["romantic", "writing"], emoji: "📔", reason: "For documenting precious moments together" },
+                        { name: "Personalized Keychain", price: "₹400", interests: ["practical", "sentimental"], emoji: "🔑", reason: "A useful everyday reminder of your bond" }
+                    ],
+                    christmas: [
+                        { name: "Festive Candle Set", price: "₹600", interests: ["home decor", "relaxation"], emoji: "🕯️", reason: "Creates a warm holiday atmosphere" },
+                        { name: "Handmade Christmas Ornament", price: "₹450", interests: ["sentimental", "crafts"], emoji: "🎄", reason: "A personal touch for their tree" }
+                    ],
+                    valentines: [
+                        { name: "Heart-shaped Chocolate Box", price: "₹800", interests: ["romantic", "food"], emoji: "🍫", reason: "A classic expression of love" },
+                        { name: "Love Letter Kit", price: "₹500", interests: ["romantic", "writing"], emoji: "💌", reason: "For heartfelt expressions" }
+                    ]
+                },
+                friend: {
+                    birthday: [
+                        { name: "Funny Socks", price: "₹350", interests: ["fun", "clothing"], emoji: "🧦", reason: "A fun and practical gift" },
+                        { name: "Custom Spotify Playlist", price: "₹0", interests: ["music", "personal"], emoji: "🎵", reason: "A personal musical journey" }
+                    ],
+                    anniversary: [
+                        { name: "Friendship Bracelet", price: "₹300", interests: ["sentimental", "fashion"], emoji: "📿", reason: "Symbolizes your special bond" },
+                        { name: "Memory Scrapbook", price: "₹700", interests: ["sentimental", "crafts"], emoji: "📒", reason: "Cherish your shared moments" }
+                    ],
+                    christmas: [
+                        { name: "Festive Mug with Hot Cocoa", price: "₹550", interests: ["food", "practical"], emoji: "☕", reason: "Warmth for the winter season" },
+                        { name: "Mini Christmas Tree", price: "₹650", interests: ["decor", "plants"], emoji: "🎄", reason: "Brings holiday cheer to their space" }
+                    ],
+                    valentines: [
+                        { name: "Friendship Plant", price: "₹600", interests: ["nature", "sentimental"], emoji: "🌱", reason: "Grows like your friendship" },
+                        { name: "Customized Keychain", price: "₹400", interests: ["practical", "sentimental"], emoji: "🔑", reason: "A daily reminder of your friendship" }
+                    ]
+                },
+                partner: {
+                    birthday: [
+                        { name: "Love Letter Kit", price: "₹400", interests: ["romantic", "writing"], emoji: "💌", reason: "Express your deepest feelings" },
+                        { name: "Star Map Poster", price: "₹750", interests: ["romantic", "decor"], emoji: "🌠", reason: "Capture a special moment in time" }
+                    ],
+                    anniversary: [
+                        { name: "Custom Couple Illustration", price: "₹900", interests: ["romantic", "art"], emoji: "🎨", reason: "A beautiful representation of your love" },
+                        { name: "Romantic Dinner Voucher", price: "₹800", interests: ["romantic", "food"], emoji: "🍽️", reason: "Quality time together" }
+                    ],
+                    christmas: [
+                        { name: "Matching Christmas PJs", price: "₹950", interests: ["romantic", "clothing"], emoji: "👚", reason: "Cute couple coordination" },
+                        { name: "Personalized Christmas Stocking", price: "₹600", interests: ["romantic", "sentimental"], emoji: "🧦", reason: "A special tradition starter" }
+                    ],
+                    valentines: [
+                        { name: "Rose Bouquet", price: "₹700", interests: ["romantic", "flowers"], emoji: "🌹", reason: "A timeless romantic gesture" },
+                        { name: "Heart-shaped Photo Frame", price: "₹500", interests: ["romantic", "sentimental"], emoji: "🖼️", reason: "Display your favorite memory together" }
+                    ]
+                }
+            },
+            medium: {
+                family: {
+                    birthday: [
+                        { name: "Smart Home Device", price: "₹2,500", interests: ["tech", "practical"], emoji: "📱", reason: "Makes their life easier" },
+                        { name: "Personalized Jewelry", price: "₹1,800", interests: ["sentimental", "fashion"], emoji: "💍", reason: "A keepsake they'll treasure" }
+                    ],
+                    anniversary: [
+                        { name: "Family Portrait Session", price: "₹3,000", interests: ["sentimental", "photography"], emoji: "📸", reason: "Capture precious family moments" },
+                        { name: "Gourmet Food Basket", price: "₹2,200", interests: ["food", "luxury"], emoji: "🧺", reason: "Delicious treats to enjoy together" }
+                    ],
+                    christmas: [
+                        { name: "Premium Christmas Hamper", price: "₹2,800", interests: ["food", "luxury"], emoji: "🎁", reason: "Festive treats for the whole family" },
+                        { name: "Smart Photo Frame", price: "₹3,500", interests: ["tech", "sentimental"], emoji: "📷", reason: "Display rotating family memories" }
+                    ],
+                    valentines: [
+                        { name: "Weekend Getaway Voucher", price: "₹3,500", interests: ["travel", "experience"], emoji: "✈️", reason: "Quality time away together" },
+                        { name: "Spa Day for Two", price: "₹3,000", interests: ["relaxation", "luxury"], emoji: "💆", reason: "Relaxation and bonding time" }
+                    ]
+                },
+                friend: {
+                    birthday: [
+                        { name: "Bluetooth Speaker", price: "₹1,800", interests: ["music", "tech"], emoji: "🔊", reason: "For music lovers" },
+                        { name: "Experience Voucher", price: "₹2,000", interests: ["adventure", "memories"], emoji: "🎟", reason: "Create lasting memories together" }
+                    ],
+                    anniversary: [
+                        { name: "Personalized Whiskey Set", price: "₹2,500", interests: ["food", "luxury"], emoji: "🥃", reason: "For the connoisseur friend" },
+                        { name: "Concert Tickets", price: "₹2,800", interests: ["music", "experience"], emoji: "🎫", reason: "Share a memorable experience" }
+                    ],
+                    christmas: [
+                        { name: "Designer Winter Scarf", price: "₹2,200", interests: ["fashion", "practical"], emoji: "🧣", reason: "Stylish and functional" },
+                        { name: "Gourmet Coffee Machine", price: "₹3,500", interests: ["food", "tech"], emoji: "☕", reason: "For the coffee enthusiast" }
+                    ],
+                    valentines: [
+                        { name: "Wine Tasting Experience", price: "₹2,500", interests: ["food", "experience"], emoji: "🍷", reason: "A fun activity to share" },
+                        { name: "Personalized Jewelry", price: "₹2,800", interests: ["fashion", "sentimental"], emoji: "📿", reason: "A meaningful accessory" }
+                    ]
+                },
+                partner: {
+                    birthday: [
+                        { name: "Spa Day Gift Set", price: "₹2,500", interests: ["relaxation", "luxury"], emoji: "🛁", reason: "Pamper your loved one" },
+                        { name: "Personalized Song", price: "₹2,000", interests: ["music", "romantic"], emoji: "🎵", reason: "A unique musical expression of love" }
+                    ],
+                    anniversary: [
+                        { name: "Romantic Dinner Cruise", price: "₹3,500", interests: ["romantic", "experience"], emoji: "🚢", reason: "An unforgettable evening" },
+                        { name: "Customized Jewelry", price: "₹3,200", interests: ["romantic", "luxury"], emoji: "💍", reason: "A timeless keepsake" }
+                    ],
+                    christmas: [
+                        { name: "Luxury Watch", price: "₹4,500", interests: ["fashion", "luxury"], emoji: "⌚", reason: "A stylish and practical gift" },
+                        { name: "Weekend Spa Retreat", price: "₹4,000", interests: ["relaxation", "romantic"], emoji: "💆", reason: "Relaxation and romance combined" }
+                    ],
+                    valentines: [
+                        { name: "Hot Air Balloon Ride", price: "₹4,500", interests: ["romantic", "adventure"], emoji: "🎈", reason: "A breathtaking shared experience" },
+                        { name: "Personalized Love Book", price: "₹3,000", interests: ["romantic", "sentimental"], emoji: "📖", reason: "A collection of your love story" }
+                    ]
+                }
+            },
+            high: {
+                family: {
+                    birthday: [
+                        { name: "Smart Watch", price: "₹8,000", interests: ["tech", "fitness"], emoji: "⌚", reason: "Health and tech combined" },
+                        { name: "Designer Handbag", price: "₹10,000", interests: ["fashion", "luxury"], emoji: "👜", reason: "A luxurious statement piece" }
+                    ],
+                    anniversary: [
+                        { name: "Family Vacation Package", price: "₹15,000", interests: ["travel", "experience"], emoji: "✈️", reason: "Create unforgettable family memories" },
+                        { name: "Premium Home Theater System", price: "₹12,000", interests: ["tech", "entertainment"], emoji: "🎬", reason: "Movie nights to remember" }
+                    ],
+                    christmas: [
+                        { name: "Designer Winter Coat", price: "₹9,500", interests: ["fashion", "luxury"], emoji: "🧥", reason: "Stylish protection from the cold" },
+                        { name: "Luxury Kitchen Appliance", price: "₹11,000", interests: ["food", "tech"], emoji: "🍳", reason: "Elevate their culinary experience" }
+                    ],
+                    valentines: [
+                        { name: "Diamond Jewelry", price: "₹15,000", interests: ["romantic", "luxury"], emoji: "💎", reason: "A timeless expression of love" },
+                        { name: "Luxury Weekend Getaway", price: "₹18,000", interests: ["romantic", "travel"], emoji: "🏨", reason: "An intimate escape together" }
+                    ]
+                },
+                friend: {
+                    birthday: [
+                        { name: "Concert Tickets", price: "₹8,000", interests: ["music", "experience"], emoji: "🎫", reason: "For the ultimate fan experience" },
+                        { name: "Designer Perfume", price: "₹7,500", interests: ["fashion", "luxury"], emoji: "💄", reason: "A sophisticated scent" }
+                    ],
+                    anniversary: [
+                        { name: "VIP Event Tickets", price: "₹9,000", interests: ["experience", "luxury"], emoji: "🎟️", reason: "Exclusive access to something special" },
+                        { name: "Limited Edition Collectible", price: "₹10,000", interests: ["hobby", "luxury"], emoji: "🏆", reason: "For the passionate collector" }
+                    ],
+                    christmas: [
+                        { name: "Luxury Leather Wallet", price: "₹8,500", interests: ["fashion", "luxury"], emoji: "👛", reason: "A classy everyday essential" },
+                        { name: "High-End Headphones", price: "₹12,000", interests: ["tech", "music"], emoji: "🎧", reason: "Premium sound experience" }
+                    ],
+                    valentines: [
+                        { name: "Fine Dining Experience", price: "₹9,500", interests: ["food", "luxury"], emoji: "🍽️", reason: "An exquisite culinary journey" },
+                        { name: "Personalized Artwork", price: "₹10,000", interests: ["art", "sentimental"], emoji: "🖼️", reason: "A unique decorative piece" }
+                    ]
+                },
+                partner: {
+                    birthday: [
+                        { name: "Romantic Vacation Package", price: "₹25,000", interests: ["romantic", "travel"], emoji: "🏝️", reason: "An unforgettable romantic escape" },
+                        { name: "Custom Jewelry Set", price: "₹18,000", interests: ["romantic", "luxury"], emoji: "💍", reason: "A matching set to symbolize your bond" }
+                    ],
+                    anniversary: [
+                        { name: "Luxury Watch", price: "₹20,000", interests: ["fashion", "luxury"], emoji: "⌚", reason: "A timeless piece they'll cherish" },
+                        { name: "Couple's Spa Retreat", price: "₹22,000", interests: ["romantic", "relaxation"], emoji: "💆", reason: "Ultimate relaxation together" }
+                    ],
+                    christmas: [
+                        { name: "Designer Jewelry", price: "₹15,000", interests: ["romantic", "luxury"], emoji: "💎", reason: "A dazzling gift they'll adore" },
+                        { name: "Luxury Winter Getaway", price: "₹30,000", interests: ["romantic", "travel"], emoji: "❄️", reason: "A magical winter escape" }
+                    ],
+                    valentines: [
+                        { name: "Engagement Ring", price: "₹50,000", interests: ["romantic", "luxury"], emoji: "💍", reason: "The ultimate romantic commitment" },
+                        { name: "Luxury Cruise Vacation", price: "₹40,000", interests: ["romantic", "travel"], emoji: "🚢", reason: "Sail into romance together" }
+                    ]
+                }
+            }
+        };
+
+        // Common gift items that work for all occasions
+        const commonGifts = [
+            { name: "Premium Chocolate Box", price: "₹500-₹2000", emoji: "🍫", reason: "Everyone loves chocolates!" },
+            { name: "Beautiful Flower Bouquet", price: "₹300-₹1500", emoji: "💐", reason: "Flowers are perfect for any occasion" },
+            { name: "Custom Cake", price: "₹400-₹3000", emoji: "🎂", reason: "A sweet treat that always works" },
+            { name: "Gift Card", price: "₹500-₹5000", emoji: "💳", reason: "Let them choose what they want" },
+            { name: "Personalized Mug", price: "₹350-₹1500", emoji: "☕", reason: "A practical yet thoughtful gift" },
+            { name: "Scented Candle Set", price: "₹600-₹2500", emoji: "🕯️", reason: "Creates a cozy atmosphere" },
+            { name: "Travel Tickets", price: "₹1000-₹10000", emoji: "✈️", reason: "The gift of experiences lasts forever" },
+            { name: "Customized Photo Album", price: "₹800-₹3000", emoji: "📷", reason: "Preserve precious memories" }
+        ];
+
+        // Initialize the chat
+        window.onload = function() {
+            setTimeout(() => {
+                speak("Hello! I'm your virtual gift assistant. Let's find the perfect gift!");
+                addMessage('bot', "Hello! I'm your virtual gift assistant. Let's find the perfect gift!");
+                askBudget();
+            }, 1000);
+        };
+
+        // Function to add message to chat
+        function addMessage(sender, text, isHtml = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            
+            if (isHtml) {
+                messageDiv.innerHTML = text;
+            } else {
+                messageDiv.textContent = text;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Function to make avatar speak
+        function speak(text) {
+            // Update speech bubble
+            avatarSpeech.textContent = text;
+            avatarSpeech.classList.add('active');
+            
+            setTimeout(() => {
+                avatarSpeech.classList.remove('active');
+            }, 3000);
+            
+            // Speak the text
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            synth.speak(utterance);
+        }
+
+        // Function to show typing indicator
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('message', 'bot-message', 'typing-indicator');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Function to hide typing indicator
+        function hideTyping() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Function to ask about budget
+        function askBudget() {
+            conversationState.step = 'budget';
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const message = "First, what's your budget range for the gift? (in Indian Rupees)";
+                speak(message);
+                addMessage('bot', message);
+                
+                // Add quick reply options
+                const optionsHtml = `
+                    <div class="question-options">
+                        <button class="option-btn" onclick="selectBudget('low')">Under ₹1,000</button>
+                        <button class="option-btn" onclick="selectBudget('medium')">₹1,000-₹5,000</button>
+                        <button class="option-btn" onclick="selectBudget('high')">Over ₹5,000</button>
+                    </div>
+                `;
+                addMessage('bot', optionsHtml, true);
+            }, 1000);
+        }
+
+        // Function to select budget
+        function selectBudget(budget) {
+            conversationState.budget = budget;
+            userInput.value = budget === 'low' ? 'Under ₹1,000' : budget === 'medium' ? '₹1,000-₹5,000' : 'Over ₹5,000';
+            sendBtn.click();
+        }
+
+        // Function to ask about recipient
+        function askRecipient() {
+            conversationState.step = 'recipient';
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const message = "Who are you buying this gift for?";
+                speak(message);
+                addMessage('bot', message);
+                
+                // Add quick reply options
+                const optionsHtml = `
+                    <div class="question-options">
+                        <button class="option-btn" onclick="selectRecipient('family')">Family Member</button>
+                        <button class="option-btn" onclick="selectRecipient('friend')">Friend</button>
+                        <button class="option-btn" onclick="selectRecipient('partner')">Partner</button>
+                    </div>
+                `;
+                addMessage('bot', optionsHtml, true);
+            }, 1000);
+        }
+
+        // Function to select recipient
+        function selectRecipient(recipient) {
+            conversationState.recipient = recipient;
+            userInput.value = recipient === 'family' ? 'Family Member' : recipient === 'friend' ? 'Friend' : 'Partner';
+            sendBtn.click();
+        }
+
+        // Function to ask about occasion
+        function askOccasion() {
+            conversationState.step = 'occasion';
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const message = "What's the occasion for this gift?";
+                speak(message);
+                addMessage('bot', message);
+                
+                // Add quick reply options
+                const optionsHtml = `
+                    <div class="question-options">
+                        <button class="option-btn" onclick="selectOccasion('birthday')">Birthday</button>
+                        <button class="option-btn" onclick="selectOccasion('anniversary')">Anniversary</button>
+                        <button class="option-btn" onclick="selectOccasion('christmas')">Christmas</button>
+                        <button class="option-btn" onclick="selectOccasion('valentines')">Valentine's Day</button>
+                    </div>
+                `;
+                addMessage('bot', optionsHtml, true);
+            }, 1000);
+        }
+
+        // Function to select occasion
+        function selectOccasion(occasion) {
+            conversationState.occasion = occasion;
+            userInput.value = occasion === 'birthday' ? 'Birthday' : 
+                            occasion === 'anniversary' ? 'Anniversary' : 
+                            occasion === 'christmas' ? 'Christmas' : 'Valentine\'s Day';
+            sendBtn.click();
+        }
+
+        // Function to ask about interests
+        function askInterests() {
+            conversationState.step = 'interests';
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const message = "What are some of their interests? (You can select multiple)";
+                speak(message);
+                addMessage('bot', message);
+                
+                // Add quick reply options
+                const optionsHtml = `
+                    <div class="question-options">
+                        <button class="option-btn" onclick="addInterest('music')">Music</button>
+                        <button class="option-btn" onclick="addInterest('travel')">Travel</button>
+                        <button class="option-btn" onclick="addInterest('fashion')">Fashion</button>
+                        <button class="option-btn" onclick="addInterest('tech')">Technology</button>
+                        <button class="option-btn" onclick="addInterest('sports')">Sports</button>
+                        <button class="option-btn" onclick="addInterest('art')">Art</button>
+                        <button class="option-btn" onclick="addInterest('food')">Food</button>
+                        <button class="option-btn" onclick="addInterest('reading')">Reading</button>
+                        <button class="option-btn" onclick="doneWithInterests()">Done</button>
+                    </div>
+                `;
+                addMessage('bot', optionsHtml, true);
+            }, 1000);
+        }
+
+        // Function to add interest
+        function addInterest(interest) {
+            if (!conversationState.interests.includes(interest)) {
+                conversationState.interests.push(interest);
+                const interestName = interest.charAt(0).toUpperCase() + interest.slice(1);
+                addMessage('user', `Added interest: ${interestName}`);
+            }
+        }
+
+        // Function when done with interests
+        function doneWithInterests() {
+            if (conversationState.interests.length === 0) {
+                addMessage('user', "No specific interests");
+            }
+            suggestGifts();
+        }
+
+        // Function to suggest gifts
+        function suggestGifts() {
+            conversationState.step = 'suggestions';
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                
+                // Get gifts based on conversation state
+                const gifts = giftDatabase[conversationState.budget]?.[conversationState.recipient]?.[conversationState.occasion] || [];
+                
+                if (gifts.length === 0) {
+                    const message = "I couldn't find specific gift suggestions for those criteria. Could you try different options?";
+                    speak(message);
+                    addMessage('bot', message);
+                    askBudget();
+                    return;
+                }
+                
+                // Filter gifts by interests if any were specified
+                let filteredGifts = gifts;
+                if (conversationState.interests.length > 0) {
+                    filteredGifts = gifts.filter(gift => 
+                        gift.interests.some(interest => 
+                            conversationState.interests.includes(interest)
+                        )
+                    );
+                }
+                
+                // If filtering removed all gifts, use the original list
+                if (filteredGifts.length === 0) {
+                    filteredGifts = gifts;
+                }
+                
+                // Select 2-3 gifts to show
+                const suggestions = filteredGifts.length <= 3 ? 
+                    filteredGifts : 
+                    [filteredGifts[0], filteredGifts[1], filteredGifts[2]];
+                
+                // Show suggestions
+                const message = `Based on your answers (${conversationState.recipient}'s ${conversationState.occasion}, ₹${conversationState.budget} budget), here are some gift ideas:`;
+                speak(message);
+                addMessage('bot', message);
+                
+                let giftsHtml = `<div class="gift-suggestions">`;
+                suggestions.forEach(gift => {
+                    giftsHtml += `
+                        <div class="gift-card">
+                            <div class="gift-image">${gift.emoji}</div>
+                            <div class="gift-details">
+                                <div class="gift-title">${gift.name}</div>
+                                <div class="gift-price">${gift.price}</div>
+                                <div class="gift-reason">${gift.reason}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                giftsHtml += `</div>`;
+                
+                addMessage('bot', giftsHtml, true);
+                
+                // Add a common gift recommendation
+                const commonGift = commonGifts[Math.floor(Math.random() * commonGifts.length)];
+                const commonGiftHtml = `
+                    <div class="common-gift">
+                        <div class="common-gift-title">Universal Gift Suggestion</div>
+                        <div>
+                            <strong>${commonGift.name}</strong> - ${commonGift.price} ${commonGift.emoji}<br>
+                            <small>${commonGift.reason}</small>
+                        </div>
+                    </div>
+                `;
+                addMessage('bot', commonGiftHtml, true);
+                
+                // Ask if user wants to start over
+                setTimeout(() => {
+                    const followUp = "Would you like to search for another gift?";
+                    speak(followUp);
+                    addMessage('bot', followUp);
+                    
+                    const optionsHtml = `
+                        <div class="question-options">
+                            <button class="option-btn" onclick="startOver()">Yes, start over</button>
+                            <button class="option-btn" onclick="endChat()">No, thanks</button>
+                        </div>
+                    `;
+                    addMessage('bot', optionsHtml, true);
+                }, 500);
+            }, 2000);
+        }
+
+        // Function to start over
+        function startOver() {
+            conversationState = {
+                step: 'welcome',
+                budget: null,
+                recipient: null,
+                occasion: null,
+                interests: []
+            };
+            askBudget();
+        }
+
+        // Function to end chat
+        function endChat() {
+            const message = "Thank you for using the Gift Assistant! Have a wonderful day!";
+            speak(message);
+            addMessage('bot', message);
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+        }
+
+        // Handle send button click
+        sendBtn.addEventListener('click', function() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+            
+            addMessage('user', message);
+            userInput.value = '';
+            
+            // Process based on current conversation step
+            switch(conversationState.step) {
+                case 'budget':
+                    if (message.toLowerCase().includes('under') || message.toLowerCase().includes('low') || message.includes('₹1,000')) {
+                        conversationState.budget = 'low';
+                        askRecipient();
+                    } else if (message.toLowerCase().includes('medium') || message.includes('₹1,000') || message.includes('₹5,000')) {
+                        conversationState.budget = 'medium';
+                        askRecipient();
+                    } else if (message.toLowerCase().includes('over') || message.toLowerCase().includes('high') || message.includes('₹5,000')) {
+                        conversationState.budget = 'high';
+                        askRecipient();
+                    } else {
+                        addMessage('bot', "Please select a budget range: Under ₹1,000, ₹1,000-₹5,000, or Over ₹5,000");
+                    }
+                    break;
+                    
+                case 'recipient':
+                    if (message.toLowerCase().includes('family') || message.toLowerCase().includes('parent') || message.toLowerCase().includes('sibling') || message.toLowerCase().includes('mother') || message.toLowerCase().includes('father') || message.toLowerCase().includes('brother') || message.toLowerCase().includes('sister')) {
+                        conversationState.recipient = 'family';
+                        askOccasion();
+                    } else if (message.toLowerCase().includes('friend') || message.toLowerCase().includes('buddy') || message.toLowerCase().includes('pal')) {
+                        conversationState.recipient = 'friend';
+                        askOccasion();
+                    } else if (message.toLowerCase().includes('partner') || message.toLowerCase().includes('girlfriend') || message.toLowerCase().includes('boyfriend') || message.toLowerCase().includes('husband') || message.toLowerCase().includes('wife') || message.toLowerCase().includes('spouse')) {
+                        conversationState.recipient = 'partner';
+                        askOccasion();
+                    } else {
+                        addMessage('bot', "Please specify if this is for a family member, friend, or partner");
+                    }
+                    break;
+                    
+                case 'occasion':
+                    if (message.toLowerCase().includes('birthday') || message.toLowerCase().includes('bday')) {
+                        conversationState.occasion = 'birthday';
+                        askInterests();
+                    } else if (message.toLowerCase().includes('anniversary')) {
+                        conversationState.occasion = 'anniversary';
+                        askInterests();
+                    } else if (message.toLowerCase().includes('christmas') || message.toLowerCase().includes('holiday') || message.toLowerCase().includes('xmas')) {
+                        conversationState.occasion = 'christmas';
+                        askInterests();
+                    } else if (message.toLowerCase().includes('valentine') || message.toLowerCase().includes('love') || message.toLowerCase().includes('romantic')) {
+                        conversationState.occasion = 'valentines';
+                        askInterests();
+                    } else {
+                        addMessage('bot', "Please specify the occasion: Birthday, Anniversary, Christmas, or Valentine's Day");
+                    }
+                    break;
+                    
+                case 'interests':
+                    // Interests are handled through the buttons
+                    break;
+                    
+                default:
+                    askBudget();
+            }
+        });
+
+        // Handle Enter key in input
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        // Voice control buttons
+        speakBtn.addEventListener('click', function() {
+            // Get the last bot message and speak it
+            const botMessages = document.querySelectorAll('.bot-message');
+            if (botMessages.length > 0) {
+                const lastMessage = botMessages[botMessages.length - 1].textContent;
+                speak(lastMessage);
+            }
+        });
+
+        listenBtn.addEventListener('click', function() {
+            if (listenBtn.classList.contains('active')) {
+                recognition.stop();
+                listenBtn.classList.remove('active');
+                listeningIndicator.style.display = 'none';
+            } else {
+                recognition.start();
+                listenBtn.classList.add('active');
+                listeningIndicator.style.display = 'flex';
+            }
+        });
+
+        // Speech recognition handlers
+        recognition.onstart = function() {
+            console.log('Voice recognition activated');
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+            sendBtn.click();
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Recognition error:', event.error);
+            listenBtn.classList.remove('active');
+            listeningIndicator.style.display = 'none';
+            addMessage('bot', "Sorry, I didn't catch that. Could you try again?");
+        };
+
+        recognition.onend = function() {
+            listenBtn.classList.remove('active');
+            listeningIndicator.style.display = 'none';
+        };
+    </script>
+</body>
+</html>
